@@ -1,16 +1,1 @@
-# flutter_application_1
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+this app called [not yet defined] help anyone with prevence maintenance issues. It allows you to schedule prevence maintenance for your machinery with a list of checklist, or topics that will be with and it will make a difference being your guide you when you are going to loss yourself on to get the job done
