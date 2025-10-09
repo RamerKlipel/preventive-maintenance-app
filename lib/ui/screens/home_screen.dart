@@ -23,6 +23,7 @@ class _HomeScreenFulState extends State<HomeScreenFul> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 250, 250, 250),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
