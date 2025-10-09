@@ -1,5 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 class CreateEquipmentScreen extends StatefulWidget {
   const CreateEquipmentScreen({super.key});
 
@@ -7,19 +8,119 @@ class CreateEquipmentScreen extends StatefulWidget {
   State<CreateEquipmentScreen> createState() => _CreateEquipmentScreen();
 }
 
+class ChecklistItem {
+  TextEditingController titleController;
+  TextEditingController descriptionController;
+  bool isRequired;
+
+  ChecklistItem({
+    required this.titleController,
+    required this.descriptionController,
+    this.isRequired = false,
+  });
+}
+
 class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _machinaryType = TextEditingController();
   final TextEditingController _machinaryLocal = TextEditingController();
   final TextEditingController _nextMaintenace = TextEditingController();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  void _saveEquipment() {
+  List <ChecklistItem> _checklistItems = [];
+
+  @override
+
+  void initState() {
+    super.initState();
+    _addChecklistItem();
+  }
+
+  void _addChecklistItem() {
+    setState(() {
+      _checklistItems.add(
+        ChecklistItem(
+          titleController: TextEditingController(),
+          descriptionController: TextEditingController(),
+          isRequired: false,
+        ),
+      );
+    });
+  }
+  
+  void _removeChecklistItem(int index) {
+    setState(() {
+      _checklistItems[index].titleController.dispose();
+      _checklistItems[index].descriptionController.dispose();
+      _checklistItems.removeAt(index);
+    });
+  }
+
+  Future<void> _saveEquipment() async {
     final name = _nameController.text;
-    final serialNumber = _machinaryType.text;
+    final machinaryType = _machinaryType.text;
+    final machinaryLocal = _machinaryLocal.text;
+    final nextMaintenace = _nextMaintenace.text;
 
-    if (name.isNotEmpty) {
-      print('salvando: $name - $serialNumber');
-      Navigator.of(context).pop();
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha o nome do equipamento.'))
+      );
+      return;
+    }
+
+    if (_machinaryType.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha o tipo do equipamento.'))
+      );
+      return;
+    }
+
+    if (_machinaryLocal.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha o local do equipamento.'))
+      );
+      return;
+    }
+
+    if (_nextMaintenace.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha a data de manutenção do equipamento.')),
+      );
+      return;
+    }
+
+    List<Map<String, dynamic>> checklist = _checklistItems.map((item) {
+      return {
+        'title': item.titleController.text,
+        'description': item.descriptionController.text,
+        'isRequired': item.isRequired,
+      };
+    }).toList();
+
+    try {
+      await _firestore.collection('equipment').add({
+        'NMEQUPMENT': _nameController.text,
+        'DSTPEQUIPMENT': _machinaryType.text,
+        'DSLOCALEQUIPMENT': _machinaryLocal.text,
+        'DATEEQUIPMENT': _nextMaintenace.text,
+        'CHECKLIST': checklist,
+        'IDUSUARIOINCLUSAO': FirebaseAuth.instance.currentUser?.uid,
+        'DAINCLUSAO': FieldValue.serverTimestamp(),
+      });
+
+      _nameController.clear();
+      _machinaryType.clear();
+      _machinaryLocal.clear();
+      _nextMaintenace.clear();
+
+    Navigator.of(context).pop();
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Ocorreu um erro ao tentar salvar as informações, tente novamente e se o erro persistir, contate um administrador do sistema erro: $e")),
+      );
+      return;
     }
   }
 
@@ -47,6 +148,11 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
     _machinaryType.dispose();
     _machinaryLocal.dispose();
     _nextMaintenace.dispose();
+
+    for (var item in _checklistItems) {
+      item.titleController.dispose();
+      item.descriptionController.dispose();
+    }
 
     super.dispose();
   }
@@ -124,7 +230,7 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
                                 controller: _nextMaintenace,
                                 readOnly: true,
                                 decoration: InputDecoration(
-                                  labelText: "Próxima Manutenção",
+                                  labelText: "Próxima Manutenção *",
                                   hintText: "Ex: " +_formatDate(DateTime.now()),
                                   hintStyle: TextStyle(
                                     color: Colors.grey,
@@ -159,25 +265,113 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
                       children: [
                         Container(
                           margin: EdgeInsets.only(top: 10),
-                          padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                          padding: EdgeInsets.fromLTRB(16, 50, 16, 16),
                           decoration: BoxDecoration(
+                            color: Color.fromARGB(255, 252, 252, 252),
                             border: Border.all(color: Colors.grey),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Column(children: [Text("Checklists")]),
+                          child: Column(
+                            children: [
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: _checklistItems.length,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin: EdgeInsets.only(bottom: 16),
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey[300]!),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.drag_handle, color: Colors.grey),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              "Item ${index + 1}",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Spacer(),
+                                            Row(
+                                              children: [
+                                                Checkbox(
+                                                  value: _checklistItems[index].isRequired,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      _checklistItems[index].isRequired = value ?? false;
+                                                    });
+                                                  }
+                                                ),
+                                                Text('Obrigatorio'),
+                                              ],
+                                            ),
+                                            IconButton(
+                                              icon: Icon(Icons.delete, color: Colors.red),
+                                              onPressed: () => _removeChecklistItem(index),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 12),
+                                        TextField(
+                                          controller: _checklistItems[index].titleController,
+                                          decoration: InputDecoration(
+                                            labelText: 'Título do item (ex: Verificar nível de óleo)',
+                                            hintStyle: TextStyle(color: Colors.grey),
+                                            border: OutlineInputBorder(),
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(height: 12),
+                                        TextField(
+                                          controller: _checklistItems[index].descriptionController,
+                                          decoration: InputDecoration(
+                                            labelText: 'Descrição opcional (Ex: Verificar se está entre min/max)',
+                                            hintStyle: TextStyle(color: Colors.grey),
+                                            border: OutlineInputBorder(),
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                          ),
+                                          maxLines: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: _addChecklistItem,
+                                icon: Icon(Icons.add),
+                                label: Text("Adicionar Item ao Checklist"),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: Size(double.infinity, 45),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         Positioned(
-                          left: 20,
-                          top: 2,
+                          left: 16,
+                          top: 20,
                           child: Container(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              "Cheklist para Manutenção",
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            color: const Color.fromARGB(255, 252, 252 ,252),
+                            child: const Text(
+                              "Checklist para Manutenção",
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
+                                color: Color.fromARGB(255, 14, 14, 14),
                               ),
                             ),
                           ),
@@ -228,7 +422,7 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(8),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onPressed: _saveEquipment,
