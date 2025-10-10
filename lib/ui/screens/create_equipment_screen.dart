@@ -1,23 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/models/ChecklistItem.dart';
 class CreateEquipmentScreen extends StatefulWidget {
   const CreateEquipmentScreen({super.key});
 
   @override
   State<CreateEquipmentScreen> createState() => _CreateEquipmentScreen();
-}
-
-class ChecklistItem {
-  TextEditingController titleController;
-  TextEditingController descriptionController;
-  bool isRequired;
-
-  ChecklistItem({
-    required this.titleController,
-    required this.descriptionController,
-    this.isRequired = false,
-  });
 }
 
 class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {

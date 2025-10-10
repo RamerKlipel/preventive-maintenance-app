@@ -1,59 +1,72 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_sheet_option_Modal.dart';
+import '../screens/equipment_list_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+// A HomeScreen agora é apenas um StatefulWidget, sem o MaterialApp
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(home: HomeScreenFul());
-  }
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class HomeScreenFul extends StatefulWidget {
-  const HomeScreenFul({super.key});
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentPageIndex = 0;
 
-  State<HomeScreenFul> createState() => _HomeScreenFulState();
-}
-
-class _HomeScreenFulState extends State<HomeScreenFul> {
-  int currentPageIndex = 0;
+  // 1. Crie a lista de telas que você quer exibir
+  final List<Widget> _pages = [
+    const EquipmentListScreen(),
+    const Center(child: Text("Conteúdo do Histórico")),
+    const Center(child: Text("Conteúdo do Dashboard")),
+    const Center(child: Text("Conteúdo das Configurações")),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 250, 250, 250),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text("Checklist App", style: TextStyle(color: Colors.black)),
+      ),
+
+      // 2. Adicione o body para mostrar a página selecionada
+      body: _pages[_currentPageIndex],
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
             context: context,
             builder: (BuildContext context) {
-              return BottomSheetOptionModal();
-            }
+              return const BottomSheetOptionModal();
+            },
           );
         },
         backgroundColor: Colors.black,
+        shape: const CircleBorder(), // Garante que o FAB seja um círculo perfeito
         child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Text("Checklist App", style: TextStyle(color: Colors.black)),
-      ),
+      
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
         onDestinationSelected: (int index) {
-          setState(() {
-            currentPageIndex = index;
-          });
+          // A lógica de logout/configurações para o último item
+          if (index == 3) {
+            // TODO: Chamar o dialog de logout/navegar para config
+            print("Configurações/Sair clicado!");
+          } else {
+            setState(() {
+              _currentPageIndex = index;
+            });
+          }
         },
         indicatorColor: Colors.black,
-        selectedIndex: currentPageIndex,
+        selectedIndex: _currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.home_outlined),
-            icon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
             label: "Home",
           ),
           NavigationDestination(
@@ -69,11 +82,10 @@ class _HomeScreenFulState extends State<HomeScreenFul> {
           NavigationDestination(
             selectedIcon: Icon(Icons.settings),
             icon: Icon(Icons.settings_outlined),
-            label: "Sair/configurações",
+            label: "Configurações",
           ),
         ],
       ),
     );
   }
 }
-
