@@ -1,5 +1,7 @@
 import "package:cloud_firestore/cloud_firestore.dart";
 import "package:flutter/material.dart";
+import "../screens/edit_equipment_screen.dart";
+import "../screens/create_equipment_screen.dart";
 
 Color _getCardColor(String? date) {
   if (date == null || date.isEmpty) {
@@ -110,7 +112,12 @@ class EquipmentListScreen extends StatelessWidget {
                   FirebaseFirestore.instance.collection('equipment').doc(equipmentDoc.id).delete();
                 }
                 if (direction == DismissDirection.endToStart) {
-                  print('editar'); //todo fazer a função para abrir a tela de edição do equipamento
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) =>  EditEquipmentScreen(
+                      equipmentId: equipmentDoc.id,
+                      equipmentData: equipmentData,
+                    )),
+                  );
                 }
               },
               child: Card(
@@ -136,7 +143,7 @@ class EquipmentListScreen extends StatelessWidget {
                     ]
                   ),
                   onTap: () {
-                    // todo Fazer a tela de editar aqui
+                    // todo Fazer a tela de checklists apenas para selecionar o checklist aqui
                     print('clicado');
                   },
                 ),
@@ -144,8 +151,6 @@ class EquipmentListScreen extends StatelessWidget {
             );
           },
         );
-        // return ListView.builder()
-        // return Center(child: Text(snapshot.data?.docs));
       }
     );
   }
