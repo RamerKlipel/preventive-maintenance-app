@@ -81,7 +81,22 @@ class EquipmentListScreen extends StatelessWidget {
           );
         }
 
-        final equipmentList = snapshot.data!.docs;
+        final equipmentList = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final checklist = List<Map<String, dynamic>>.from(data['CHECKLIST'] ?? []);
+          
+          if (checklist.isEmpty) return true;
+          
+          final allCompleted = checklist.every((item) => item['isCompleted'] == true);
+          
+          return !allCompleted;
+        }).toList();
+
+        if (equipmentList.isEmpty) {
+          return const Center(
+            child: Text("Nenhum equipamento com manutenção pendente"),
+          );
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.all(10.0),

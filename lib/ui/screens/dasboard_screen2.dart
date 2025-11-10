@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HistoricScreen extends StatefulWidget {
-  const HistoricScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<HistoricScreen> createState() => _HistoricScreenState();
+  State<DashboardScreen> createState() => DashboardScreenState();
 }
 
-class _HistoricScreenState extends State<HistoricScreen> {
+class DashboardScreenState extends State<DashboardScreen> {
   DateTime? _start;
   DateTime? _end;
   String _statusFilter = 'all';
 
-  final CollectionReference logsRef =
-      FirebaseFirestore.instance.collection('equipment');
+  final CollectionReference logsRef = FirebaseFirestore.instance.collection('equipment');
 
   Future<Map<String, int>> _getEquipmentStatistics() async {
     final query = await logsRef.get();
@@ -24,15 +23,28 @@ class _HistoricScreenState extends State<HistoricScreen> {
     for (var doc in query.docs) {
       total++;
       final data = doc.data() as Map<String, dynamic>;
-      final status = (data['status'] ?? 'pending') as String;
-      if (status == 'completed') completed++;
-      if (status == 'pending') pending++;
-      final ts = data['date'];
-      DateTime date;
-      if (ts is Timestamp) date = ts.toDate();
-      else if (ts is DateTime) date = ts;
-      else continue;
-      if (date.isBefore(now) && status != 'completed') overdue++;
+      final checklist = List<Map<String, dynamic>>.from(data['CHECKLIST'] ?? []);
+      final isCompleted = checklist.isNotEmpty && 
+          checklist.every((item) => item['isCompleted'] == true);
+      
+      final dateStr = data['DATEEQUIPMENT'] as String?;
+      if (dateStr != null && dateStr.isNotEmpty) {
+        final parts = dateStr.split('/');
+        final maintenanceDate = DateTime(
+          int.parse(parts[2]),
+          int.parse(parts[1]),
+          int.parse(parts[0]),
+        );
+
+        if (isCompleted) {
+          completed++;
+        } else {
+          pending++;
+          if (maintenanceDate.isBefore(now)) {
+            overdue++;
+          }
+        }
+      }
     }
 
     return {
@@ -44,16 +56,19 @@ class _HistoricScreenState extends State<HistoricScreen> {
   }
 
   Query _buildQuery() {
-    Query q = logsRef.orderBy('date', descending: true);
-    if (_statusFilter != 'all') q = q.where('status', isEqualTo: _statusFilter);
+    Query query = logsRef.orderBy('DATEEQUIPMENT', descending: true);
+    
     if (_start != null) {
-      q = q.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(_start!));
+      query = query.where('DATEEQUIPMENT', isGreaterThanOrEqualTo: 
+        '${_start!.day.toString().padLeft(2, '0')}/${_start!.month.toString().padLeft(2, '0')}/${_start!.year}');
     }
+    
     if (_end != null) {
-      final endDay = DateTime(_end!.year, _end!.month, _end!.day, 23, 59, 59);
-      q = q.where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDay));
+      query = query.where('DATEEQUIPMENT', isLessThanOrEqualTo: 
+        '${_end!.day.toString().padLeft(2, '0')}/${_end!.month.toString().padLeft(2, '0')}/${_end!.year}');
     }
-    return q;
+    
+    return query;
   }
 
   Future<void> _pickDateRange() async {
@@ -96,7 +111,7 @@ class _HistoricScreenState extends State<HistoricScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Histórico de Manutenções'),
+        title: const Text('Dashboard de Manutenções'),
         actions: [
           IconButton(
             icon: const Icon(Icons.date_range),
@@ -169,7 +184,28 @@ class _HistoricScreenState extends State<HistoricScreen> {
                 if (!snap.hasData || snap.data!.docs.isEmpty) {
                   return const Center(child: Text('Nenhum registro encontrado.'));
                 }
-                final docs = snap.data!.docs;
+                
+                final allDocs = snap.data!.docs;
+                final docs = _statusFilter == 'all' 
+                    ? allDocs 
+                    : allDocs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final checklist = List<Map<String, dynamic>>.from(data['CHECKLIST'] ?? []);
+                        final isCompleted = checklist.isNotEmpty && 
+                            checklist.every((item) => item['isCompleted'] == true);
+                
+                        switch (_statusFilter) {
+                          case 'completed':
+                            return isCompleted;
+                          case 'pending':
+                            return !isCompleted && !_isOverdue(data['DATEEQUIPMENT']);
+                          case 'overdue':
+                            return !isCompleted && _isOverdue(data['DATEEQUIPMENT']);
+                          default:
+                            return true;
+                        }
+                      }).toList();
+
                 return ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: docs.length,
@@ -177,17 +213,22 @@ class _HistoricScreenState extends State<HistoricScreen> {
                   itemBuilder: (context, i) {
                     final d = docs[i];
                     final data = d.data() as Map<String, dynamic>;
-                    final equipmentName = data['equipmentName'] ?? '—';
-                    final status = data['status'] ?? 'pending';
-                    final date = data['date'];
-                    final notes = data['notes'] ?? '';
+                    final equipmentName = data['NMEQUPMENT'] ?? '—';
+                    final date = data['DATEEQUIPMENT'];
+                    final notes = data['DSTPEQUIPMENT'];
+                    final checklist = List<Map<String, dynamic>>.from(data['CHECKLIST'] ?? []);
+                    final isCompleted = checklist.isNotEmpty && 
+                        checklist.every((item) => item['isCompleted'] == true);
+        
+                    final status = isCompleted ? 'completado' : 
+                        (_isOverdue(date) ? 'atrasado' : 'a fazer');
+
                     return Card(
                       child: ListTile(
                         leading: _statusIcon(status),
                         title: Text(equipmentName),
-                        subtitle: Text('${_formatDate(date)}\n$notes', maxLines: 2, overflow: TextOverflow.ellipsis),
-                        isThreeLine: true,
-                        trailing: Text(status.toString().toUpperCase()),
+                        subtitle: Text(_formatDate(date)),
+                        trailing: Text(status.toUpperCase()),
                         onTap: () {
                           showDialog(
                             context: context,
@@ -246,12 +287,25 @@ class _HistoricScreenState extends State<HistoricScreen> {
 
   Widget _statusIcon(String status) {
     switch (status) {
-      case 'completed':
+      case 'completado':
         return const Icon(Icons.check_circle, color: Colors.green);
-      case 'overdue':
+      case 'atrasado':
         return const Icon(Icons.error, color: Colors.red);
       default:
         return const Icon(Icons.hourglass_bottom, color: Colors.orange);
     }
+  }
+
+  bool _isOverdue(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return false;
+  
+    final parts = dateStr.split('/');
+    final maintenanceDate = DateTime(
+      int.parse(parts[2]),
+      int.parse(parts[1]),
+      int.parse(parts[0]),
+    );
+  
+    return maintenanceDate.isBefore(DateTime.now());
   }
 }

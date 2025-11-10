@@ -25,8 +25,8 @@ class _HistoricScreenState extends State<HistoricScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('equipment')
-            .where('DAALT', isNull: true)
-            .orderBy('DATEEQUIPMENT', descending: true)
+            .where('DAALT', isNull: false)
+            // .orderBy('DATEEQUIPMENT', descending: false)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/bottom_sheet_option_Modal.dart';
 import '../screens/equipment_list_screen.dart';
 import '../../core/services/auth_service.dart';
-import './dashboard_sreen.dart';
 import './historic_screen.dart';
+import './dasboard_screen2.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     const EquipmentListScreen(),
     const HistoricScreen(),
-    const DashboardSreen(),
+    const DashboardScreen(),
   ];
   final _auth = AuthService();
 
