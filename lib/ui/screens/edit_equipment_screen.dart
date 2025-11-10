@@ -117,8 +117,8 @@ class _EditEquipmentScreen extends State<EditEquipmentScreen> {
         'DSLOCALEQUIPMENT': machinaryLocal,
         'DATEEQUIPMENT': nextMaintenace,
         'CHECKLIST': checklist,
-        'IDUSUARIOINCLUSAO': FirebaseAuth.instance.currentUser?.uid,
-        'DAINCLUSAO': FieldValue.serverTimestamp(),
+        'IDUSUARIOALT': FirebaseAuth.instance.currentUser?.uid,
+        'DAALT': FieldValue.serverTimestamp(),
       });
 
     Navigator.of(context).pop();

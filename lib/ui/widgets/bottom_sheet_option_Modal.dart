@@ -28,7 +28,7 @@ class BottomSheetOptionModal extends StatelessWidget {
             ),
             child: ListTile(
               leading: const Icon(Icons.add_box_outlined),
-              title: Text("Adicionar novo equipamento"), // todo colocar um subtexto como ta no figma
+              title: Text("Adicionar novo equipamento"),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadiusGeometry.circular(8),
               ),

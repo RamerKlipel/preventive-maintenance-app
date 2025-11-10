@@ -3,8 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // cadastro
-
   Future<User?> register(String email, String password) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
@@ -23,8 +21,6 @@ class AuthService {
       return null;
     }
   }
-
-  //login
 
   Future<User?> login(String email, String password) async {
     try {
@@ -45,13 +41,9 @@ class AuthService {
     }
   }
 
-  // Logout
-
   Future<void> logout() async {
     await _auth.signOut();
   }
-
-  // usuario atual
 
   User? get currentUser => _auth.currentUser;
 }

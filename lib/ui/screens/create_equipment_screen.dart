@@ -32,6 +32,7 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
           titleController: TextEditingController(),
           descriptionController: TextEditingController(),
           isRequired: false,
+          isCompleted: false,
         ),
       );
     });
@@ -84,6 +85,7 @@ class _CreateEquipmentScreen extends State<CreateEquipmentScreen> {
         'title': item.titleController.text,
         'description': item.descriptionController.text,
         'isRequired': item.isRequired,
+        'isCompleted': item.isCompleted,
       };
     }).toList();
 

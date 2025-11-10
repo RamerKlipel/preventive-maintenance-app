@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_sheet_option_Modal.dart';
 import '../screens/equipment_list_screen.dart';
+import '../../core/services/auth_service.dart';
+import './dashboard_sreen.dart';
+import './historic_screen.dart';
 
-// A HomeScreen agora é apenas um StatefulWidget, sem o MaterialApp
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -13,13 +15,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentPageIndex = 0;
 
-  // 1. Crie a lista de telas que você quer exibir
   final List<Widget> _pages = [
     const EquipmentListScreen(),
-    const Center(child: Text("Conteúdo do Histórico")),
-    const Center(child: Text("Conteúdo do Dashboard")),
-    const Center(child: Text("Conteúdo das Configurações")),
+    const HistoricScreen(),
+    const DashboardSreen(),
   ];
+  final _auth = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("Checklist App", style: TextStyle(color: Colors.black)),
       ),
 
-      // 2. Adicione o body para mostrar a página selecionada
       body: _pages[_currentPageIndex],
 
       floatingActionButton: FloatingActionButton(
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
         backgroundColor: Colors.black,
-        shape: const CircleBorder(), // Garante que o FAB seja um círculo perfeito
+        shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -51,10 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
         onDestinationSelected: (int index) {
-          // A lógica de logout/configurações para o último item
           if (index == 3) {
-            // TODO: Chamar o dialog de logout/navegar para config
-            print("Configurações/Sair clicado!");
+            _auth.logout();
           } else {
             setState(() {
               _currentPageIndex = index;
@@ -80,9 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: "Dashboard",
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.settings),
-            icon: Icon(Icons.settings_outlined),
-            label: "Configurações",
+            icon: Icon(Icons.logout_outlined),
+            label: "Sair",
           ),
         ],
       ),
