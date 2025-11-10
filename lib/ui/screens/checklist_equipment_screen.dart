@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/models/ChecklistItem.dart';
 
 class ChecklistEquipmentScreen extends StatefulWidget {
   final String equipmentId;
@@ -15,14 +18,19 @@ class ChecklistEquipmentScreen extends StatefulWidget {
 
 class _ChecklistEquipmentScreen extends State<ChecklistEquipmentScreen> {
   late List<Map<String, dynamic>> checklist;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   @override
   void initState() {
     super.initState();
     checklist = List<Map<String, dynamic>>.from(widget.equipmentData['CHECKLIST'] ?? []);
+    print(checklist);
   }
 
   void _toggleChecklistItem(int index, bool? value) {
-    setState(() {checklist[index]['isCompleted'] = value ?? false;});
+    setState(() {
+      checklist[index]['isCompleted'] = value ?? false;
+      _saveEquipment();
+    });
   }
 
   void _completeAllItems() {
@@ -30,7 +38,24 @@ class _ChecklistEquipmentScreen extends State<ChecklistEquipmentScreen> {
       for (var item in checklist) {
         item['isCompleted'] = true;
       }
+      _saveEquipment();
     });
+  }
+
+  Future<void> _saveEquipment() async {
+    try {
+      await _firestore.collection('equipment').doc(widget.equipmentId).update({
+        'CHECKLIST': checklist,
+        'IDUSUARIOALT': FirebaseAuth.instance.currentUser?.uid,
+        'DAALT': FieldValue.serverTimestamp(),
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Ocorreu um erro ao tentar salvar as informações, tente novamente e se o erro persistir, contate um administrador do sistema erro: $e")),
+      );
+      return;
+    }
   }
 
   @override
@@ -120,7 +145,6 @@ class _ChecklistEquipmentScreen extends State<ChecklistEquipmentScreen> {
                         decoration: (item['isCompleted'] ?? false) ? TextDecoration.lineThrough : TextDecoration.none
                       ),
                     ),
-                  // subtitle: Text(item['description'] ?? '')
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
